@@ -84,3 +84,8 @@ Hast du Vorschläge oder Feedback? Kontaktiere mich gerne:
 ---
 
 Viel Spaß mit DSB-Bot! 😊
+# Frontend API setup
+
+The frontend and API are served from one OCI host. Caddy serves these static files at the site root and proxies `/api/*` to FastAPI. `assets/js/apiConfig.js` uses `window.location.origin`, so no per-host API edit is needed. Configure the public domain in the backend `.env` as `API_DOMAIN`.
+
+Current plans and history are loaded from that API. Historical HTML is opened directly in a sandboxed iframe, so relative assets resolve against the site origin and plan scripts cannot run. The existing pages, themes, reload control, and future-plan preference remain in place.

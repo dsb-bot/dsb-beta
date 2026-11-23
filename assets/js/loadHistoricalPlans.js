@@ -1,140 +1,82 @@
-async function loadHistoricalPlans() {
+﻿async function loadHistoricalPlans() {
   const container = document.getElementById("list-container");
-
-  container.innerHTML = `
-    <div class="card">
-      <h2>Pläne Laden...</h2>
-      <p>Eigentlich sollte das nicht so lange dauern, dass du das hier lesen kannst!</p>
-    </div>
-  `;
+  const loading = document.createElement("div");
+  loading.className = "card";
+  loading.innerHTML = "<h2>Historische Pläne werden geladen …</h2>";
+  container.replaceChildren(loading);
 
   try {
-    const selectedDB = getDatabase(); // Cookie lesen
-    const response = await fetch(`https://api.github.com/repos/dsb-bot/${selectedDB}/contents/plans`);
-
-    if (!response.ok) {
-      let errorMessage = `${response.status} ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        if (errorData && errorData.message) errorMessage += ` – ${errorData.message}`;
-      } catch {}
-      throw new Error(errorMessage);
+    const today = getBerlinDate();
+    const plans = (await fetchPlans(undefined, today))
+      .filter(plan => plan.date < today)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (!plans.length) {
+      const empty = document.createElement("div");
+      empty.className = "card";
+      empty.textContent = "Es sind noch keine historischen Pläne vorhanden.";
+      container.replaceChildren(empty);
+      return;
     }
 
-    const files = await response.json();
-
-    // Gestern bestimmen
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0]; // YYYY-MM-DD
-
-    // Filter: nur HTML-Dateien mit Datum bis gestern
-    const planFiles = files
-      .filter(f => f.name.match(/^\d{4}-\d{2}-\d{2}\.html$/))
-      .filter(f => f.name.replace(".html", "") <= yesterdayStr);
-
-    // Sortiere absteigend (neueste zuerst)
-    planFiles.sort((a, b) => new Date(b.name.replace(".html", "")) - new Date(a.name.replace(".html", "")));
-
-    // Gruppieren nach Jahr und Kalenderwoche, damit Wochen über Jahreswechsel getrennt bleiben
-    const groupedByYearWeek = {};
-    for (const file of planFiles) {
-      const dateStr = file.name.replace(".html", "");
-      const date = new Date(dateStr);
-      const year = date.getFullYear();
-      const week = getWeekNumber(date);
-      if (!groupedByYearWeek[year]) groupedByYearWeek[year] = {};
-      if (!groupedByYearWeek[year][week]) groupedByYearWeek[year][week] = [];
-      groupedByYearWeek[year][week].push({ file, date });
+    const grouped = new Map();
+    for (const plan of plans) {
+      const date = new Date(`${plan.date}T00:00:00Z`);
+      const week = getIsoWeek(date);
+      const key = `${week.year}-${String(week.week).padStart(2, "0")}`;
+      if (!grouped.has(key)) grouped.set(key, { ...week, plans: [] });
+      grouped.get(key).plans.push(plan);
     }
 
-    container.innerHTML = "";
+    container.replaceChildren();
+    let cardIndex = 0;
+    for (const week of grouped.values()) {
+      const section = document.createElement("div");
+      section.className = "week-section";
+      const heading = document.createElement("h2");
+      heading.textContent = `${week.year} Kalenderwoche ${week.week}`;
+      const list = document.createElement("div");
+      list.className = "list";
+      section.append(heading, list);
 
-    let cardIndex = 0; // Für gestaffelte Animation
-
-    // Jahre absteigend (neuere Jahre zuerst), innerhalb eines Jahres Wochen absteigend
-    Object.keys(groupedByYearWeek)
-      .sort((a, b) => b - a)
-      .forEach(year => {
-        const weeks = groupedByYearWeek[year];
-        Object.keys(weeks)
-          .sort((a, b) => b - a)
-          .forEach(week => {
-            const listWrapper = document.createElement("div");
-            listWrapper.className = "week-section";
-
-            const heading = document.createElement("h2");
-            heading.textContent = `${year} Kalenderwoche ${week}`;
-            listWrapper.appendChild(heading);
-
-            const list = document.createElement("div");
-            list.className = "list";
-
-            weeks[week].forEach(({ file, date }) => {
-          const options = { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" };
-          const formattedDate = date.toLocaleDateString("de-DE", options);
-          const [weekday, rest] = formattedDate.split(", ");
-          const downloadUrl = file.download_url;
-
-          const card = document.createElement("div");
-          card.className = "card hidden";
-          card.dataset.url = downloadUrl;
-          card.onclick = () => loadPlan(card);
-          card.style.cursor = "pointer";
-          card.innerHTML = `
-            <h2>${formattedDate}</h2>
-            <p>Datei: ${file.name}</p>
-          `;
-
-          list.appendChild(card);
-
-          // gestaffeltes Einblenden
-          setTimeout(() => {
-            card.classList.remove("hidden");
-            card.classList.add("fade-in");
-          }, cardIndex * 100);
-          cardIndex++;
-        });
-
-        listWrapper.appendChild(list);
-        container.appendChild(listWrapper);
-      });
-    });
+      for (const plan of week.plans) {
+        const date = new Date(`${plan.date}T00:00:00Z`);
+        const card = document.createElement("div");
+        card.className = "card hidden";
+        card.dataset.url = getPlanHtmlUrl(plan);
+        card.style.cursor = "pointer";
+        const title = document.createElement("h2");
+        title.textContent = new Intl.DateTimeFormat("de-DE", {
+          weekday: "long", day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC"
+        }).format(date);
+        const file = document.createElement("p");
+        file.textContent = `Plan vom ${plan.date}`;
+        card.append(title, file);
+        card.addEventListener("click", () => loadPlan(card));
+        list.appendChild(card);
+        setTimeout(() => {
+          card.classList.remove("hidden");
+          card.classList.add("fade-in");
+        }, cardIndex * 40);
+        cardIndex++;
+      }
+      container.appendChild(section);
+    }
   } catch (error) {
-    console.error(error);
-    container.innerHTML = `
-      <div class="card">
-        <h2>Ein Fehler ist aufgetreten.</h2>
-        <p>${error}</p>
-        <br>
-        <p>Wenn Du öfters als 60 mal in der letzten Stunde neue Pläne geladen hast, werden leider keine weitere Anfragen erlaubt. Bitte habe etwas Geduld!</p>
-        <p>Ansonsten melde den Fehler bitte <a href="/kontakt.html">hier<a/>.</p>
-      </div>
-    `;
+    console.error("Fehler beim Laden der Historie:", error);
+    showPlanLoadError(container, error);
   }
 }
 
-// Hilfsfunktionen
-function capitalizeFirstLetter(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function getWeekNumber(d) {
-  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-}
-
-function loadPlan(element) {
-  const url = element.dataset.url;
-  console.log("Lade Plan:", url);
+function getIsoWeek(input) {
+  const date = new Date(Date.UTC(input.getUTCFullYear(), input.getUTCMonth(), input.getUTCDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const year = date.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(year, 0, 1));
+  return { year, week: Math.ceil(((date - yearStart) / 86400000 + 1) / 7) };
 }
 
 async function reloadPlans() {
-  loadHistoricalPlans();
+  return loadHistoricalPlans();
 }
 
 document.addEventListener("DOMContentLoaded", loadHistoricalPlans);
