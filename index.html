@@ -17,11 +17,31 @@
       }
     })();
   </script>
+
+  <script data-goatcounter="https://dsb-bot.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+
 </head>
 
 <body>
 
   <div class="background"></div>
+
+  <!-- Message Popup -->
+  <div id="message-popup" style="display:none;">
+    <div class="popup">
+      <div class="popup-content">
+        <h2 id="popup-title"></h2>
+        <p id="popup-message"></p>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+          <button onclick="closeMessagePopup()">Schließen</button>
+          <button onclick="forgetMessagePopup()">Nicht mehr anzeigen</button>
+        </div>
+
+        <small id="popup-date"></small>
+      </div>
+    </div>
+  </div>
 
   <div class="navbar" id="navbar">
     <!-- Logo und Titel -->
@@ -35,10 +55,17 @@
     <!-- Dropdowns -->
     <div class="navbar-dropdowns">
 
-      <div class="dropdown" id="nav-dropdown">
+      <div class="dropdown" id="reload-dropdown">
         <button class="dropdown-button reload-button" onclick="reloadPlans()">
           <i class="fa fa-rotate-right"></i>
-          <span class="label">Reload</span>
+          <span class="label">Neuladen</span>
+        </button>
+      </div>
+
+      <div class="dropdown" id="share-dropdown">
+        <button class="dropdown-button" onclick="share()">
+          <i class="fa fa-share-alt"></i>
+          <span class="label">Teilen</span>
         </button>
       </div>
 
@@ -50,6 +77,7 @@
         <div class="dropdown-content">
           <button onclick="window.location.href='./index.html'">Start</button>
           <button onclick="window.location.href='./historie.html'">Historie</button>
+          <button onclick="window.location.href='./preferences.html'">Einstellungen</button>
           <button onclick="window.location.href='./kontakt.html'">Kontakt</button>
           <button onclick="window.location.href='./datenschutz.html'">Datenschutz</button>
           <button onclick="window.location.href='./impressum.html'">Impressum</button>
@@ -107,37 +135,59 @@
 
       <div class="text-card">
         <h2>Information</h2>
-        <p>Diese Seite ist noch im Bau und Fehler können auftreten.</p>
-        <p>Bitte überprüfe immer DSB-Mobile, wenn der Stand der Pläne etwas älter ist. Vielleicht hat etwas nicht so
-          geklappt, wie es soll. Melde einen Fehler: <a href="kontakt.html">Kontakt</a></p>
-      </div>
-
-      <div class="text-card">
+        <p>Diese Seite ist noch im Bau und Fehler sind menschlich. Bitte melde alle Fehler sofort: <a
+            href="kontakt.html">Kontakt</a></p>
+        <br>
         <h2>Funktionen</h2>
         <p>
         <ul>
-          <li>Höhere Vertretungsplan-Verfügbarkeit als in der DSB-App!</li>
+          <li>Pläne, die in der App fehlen, gibt es auch hier!</li>
           <li>Verschiedene Themes</li>
           <li>Plan Historie (ab 11.09.2025)</li>
         </ul>
         </p>
-      </div>
-
-      <div class="text-card">
+        <br>
         <h2>Ankündigungen</h2>
-        <p>Upcomming Features...</p>
         <ul>
-          <li>Aktuell arbeiten wir an dem Transfer zu Cloudflare services, um die Vertretungspläne in Zukunft Passwort
-            zu sichern.</li>
           <li>Sende <a href="kontakt.html">hier</a> eigene Vorschläge</li>
         </ul>
       </div>
 
       <div class="text-card">
         <h2>Changelog</h2>
+        <p>Update 27.02.2026</p>
+        <ul>
+          <li>Pläne nach morgen sind nun offiziell verfügbar und defaultmäßig aktiviert!
+          </li>
+          <li>Zitat des Tages ist wieder ganz unten.</li>
+        </ul>
+        <br>
+        <p>Update 24.02.2026</p>
+        <ul>
+          <li>Die Startseite zeigt jetzt wichtige Ankündigungen und News ganz oben als Mitteilung an, damit du immer auf
+            dem Laufenden
+            bist.
+          </li>
+          <li>Die Startseite ist nun noch kompakter.</li>
+        </ul>
+        <br>
+        <p>Update 18.12.2025</p>
+        <ul>
+          <li>Sieh Pläne ein, die erst morgen verfügbar sind!.
+          </li>
+        </ul>
+        <br>
+        <p>Update 03.12.2025</p>
+        <ul>
+          <li>Neue Einstellungen Seite</li>
+          <li>Option zur Einstellung, ob Pläne nach morgen angezeigt werden sollen, hinzugefügt.</li>
+          <li>Option zur Wahl der Datenbank hinzugefügt.</li>
+        </ul>
+        <br>
         <p>Update 29.10.2025</p>
         <ul>
-          <li>Die Navigationsbar hat neue Menu Funktionen bekommen und nimmt auf schmalen Geräten weniger Platz weg.</li>
+          <li>Die Navigationsbar hat neue Menu Funktionen bekommen und nimmt auf schmalen Geräten weniger Platz weg.
+          </li>
           <li>Der neue "Reload" Button kann die Pläne neu laden, ohne die Seite komplett zu aktualisieren.</li>
         </ul>
         <br>
@@ -227,11 +277,13 @@
   <script src="assets/js/script.js"></script>
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/loadCurrentPlans.js"></script>
+  <script src="assets/js/preferences.js"></script>
   <script src="assets/js/showPlan.js"></script>
+  <script src="assets/js/loadNews.js"></script>
 
   <footer id="footer">
     <div class="footer-text">
-      DSB-Bot by DerJokko - &copy; 2025 All rights reserved.<br>
+      DSB-Bot by DerJokko - &copy; 2026 All rights reserved.<br>
       <a href="./impressum.html" class="footer-text">Impressum</a>
       <a href="./datenschutz.html" class="footer-text">Datenschutz</a>
       <br>

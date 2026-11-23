@@ -1,11 +1,20 @@
-// --- Bilder vorladen ---
-function preloadImages(urls) {
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function preloadImages(urls) {
+  // 1 Sekunde warten
+  await delay(1000);
+
+  // Bilder gleichzeitig laden
   urls.forEach(url => {
     const img = new Image();
     img.src = url;
+    console.log(`Preloading: ${url}`);
   });
 }
 
+// Aufruf
 preloadImages([
   "../assets/images/space_background.jpg",
   "../assets/images/brown_background.jpg",
@@ -18,6 +27,7 @@ preloadImages([
   "../assets/images/silver_background.jpg"
 ]);
 
+
 // --- Navbar- und Button-Logik ---
 document.addEventListener("DOMContentLoaded", () => {
   const navbar = document.querySelector(".navbar");
@@ -29,6 +39,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const button = dropdown.querySelector(".dropdown-button");
     button.addEventListener("click", (event) => {
       event.stopPropagation();
+
+      // Alle anderen Dropdowns schließen
+      dropdowns.forEach((d) => {
+        if (d !== dropdown) {
+          d.classList.remove("active");
+        }
+      });
+
       dropdown.classList.toggle("active");
     });
   });
@@ -54,3 +72,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("Navbar und Dropdowns initialisiert ✅");
 });
+
+function share() {
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            text: "Schau mal wie klasse! Das hier ist der Vertretungsplan, nur fancy und IMMER verfügbar.",
+            url: "https://dsb-bot.github.io"
+        });
+    } else {
+        alert("Teilen wird von diesem Browser nicht unterstützt.");
+    }
+}
