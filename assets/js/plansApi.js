@@ -27,10 +27,12 @@ function getBerlinDate(offsetDays = 0) {
 async function fetchPlans(from, to) {
   if (getDatabase() !== "cloudflare") {
     const database = getDatabase();
-    const response = await fetch(
-      `https://api.github.com/repos/dsb-bot/${database}/contents/plans${from ? `?timestamp=${Date.now()}` : ""}`,
-      { headers: { Accept: "application/vnd.github+json" } }
-    );
+    const url = new URL(`https://api.github.com/repos/dsb-bot/${database}/contents/plans`);
+    url.searchParams.set("timestamp", Date.now().toString());
+    const response = await fetch(url, {
+      headers: { Accept: "application/vnd.github+json" },
+      cache: "no-store",
+    });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     const files = await response.json();
     if (!Array.isArray(files)) throw new Error("Unerwartete Antwort der GitHub-Datenbank.");
@@ -64,6 +66,7 @@ function getPlanHtmlUrl(plan) {
     if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com") {
       throw new Error("Ungültige Plan-URL aus der GitHub-Datenbank.");
     }
+    url.searchParams.set("timestamp", Date.now().toString());
     return url.toString();
   }
   return new URL(plan.html_url, `${getApiBaseUrl()}/`).toString();

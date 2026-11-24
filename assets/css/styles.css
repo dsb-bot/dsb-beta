@@ -462,6 +462,42 @@ button:active {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
+#database-choice {
+  display: block;
+  width: min(100%, 350px);
+  margin: 0.75rem auto;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--base-active-bg-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  background-color: var(--base-bg-color);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#database-choice option {
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
+
+#database-choice:focus-visible {
+  outline: 2px solid var(--text-active-color);
+  outline-offset: 2px;
+}
+
+label[for="database-choice"] {
+  display: block;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+#database-source-status {
+  min-height: 1.2em;
+  text-align: center;
+}
+
 @media (max-width: 310px) {
   .container {
     min-width: 310px;
