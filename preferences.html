@@ -137,7 +137,16 @@
         <div class="text-card">
           <h2>Planquelle</h2>
           <br>
-          <p>Die Vertretungspl&auml;ne werden zentral vom DSB-Bot-Backend bereitgestellt. Die Datenquelle kann hier nicht gewechselt werden.</p>
+          <h3>Aktuelle Datenquelle</h3>
+          <p id="current-db">Cloudflare (Standard)</p>
+          <label for="database-choice">Datenbank auswählen</label>
+          <select id="database-choice" onchange="handleDatabaseSourceChange()">
+            <option value="cloudflare">Cloudflare (Standard)</option>
+            <option value="dsb-database">GitHub: dsb-database</option>
+            <option value="dsb-beta-database">GitHub: dsb-beta-database</option>
+          </select>
+          <p id="database-source-status" role="status" aria-live="polite"></p>
+          <p>Cloudflare ist die Standardquelle. Alternativ kannst du die beiden öffentlichen GitHub-Planarchive auswählen. Die Auswahl wird für ein Jahr gespeichert; bekannte alte Datenbank-Cookies bleiben erhalten.</p>
         </div>
       </div>
     </div>
@@ -146,6 +155,8 @@
 
     <script src="assets/js/script.js"></script>
     <script src="assets/js/theme.js"></script>
+    <script src="assets/js/apiConfig.js"></script>
+    <script src="assets/js/plansApi.js"></script>
     <script src="assets/js/preferences.js"></script>
 
     <footer id="footer">

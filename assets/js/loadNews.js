@@ -41,18 +41,18 @@ function closeMessagePopup() {
 
 // --- Cookie-Funktionen ---
 function setCookie(name, value, days) {
-  let expires = "";
-  if (days) {
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-    expires = "; expires=" + date.toUTCString();
-  }
-  document.cookie = name + "=" + value + expires + "; path=/; SameSite=Lax";
+  const maxAge = Math.max(0, Math.floor(days * 24 * 60 * 60));
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
 }
 
 function getCookie(name) {
-  return document.cookie.split('; ').reduce((r, c) => {
-    const t = c.split('=');
-    return t[0] === name ? t[1] : r;
-  }, null);
+  const entry = document.cookie.split(";").map(cookie => cookie.trim())
+    .find(cookie => cookie.startsWith(`${encodeURIComponent(name)}=`));
+  if (!entry) return null;
+  try {
+    return decodeURIComponent(entry.slice(encodeURIComponent(name).length + 1));
+  } catch {
+    return null;
+  }
 }

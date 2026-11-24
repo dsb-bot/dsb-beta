@@ -1,47 +1,84 @@
 const COOKIE_DATABASE = "dsb_database";
+const COOKIE_FUTURE_PLANS = "futurePlans";
+const COOKIE_PREFERENCE_MAX_AGE = 365 * 24 * 60 * 60;
+const DATABASES = ["cloudflare", "dsb-database", "dsb-beta-database"];
+const DATABASE_LABELS = {
+  cloudflare: "Cloudflare (Standard)",
+  "dsb-database": "GitHub: dsb-database",
+  "dsb-beta-database": "GitHub: dsb-beta-database",
+};
 
-// Cookie setzen
+function cookieOptions(maxAge) {
+  return `Max-Age=${maxAge}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+}
+
+function getCookie(name) {
+  const entry = document.cookie.split(";").map(cookie => cookie.trim())
+    .find(cookie => cookie.startsWith(`${name}=`));
+  if (!entry) return null;
+  try {
+    return decodeURIComponent(entry.slice(name.length + 1));
+  } catch {
+    return null;
+  }
+}
+
+function setPreferenceCookie(name, value, maxAge) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; ${cookieOptions(maxAge)}`;
+}
+
+function expireCookie(name) {
+  document.cookie = `${name}=; ${cookieOptions(0)}`;
+}
+
 function setDatabase(dbName) {
-  const date = new Date();
-  date.setTime(date.getTime() + 365 * 24 * 60 * 60 * 1000);
-
-  document.cookie = `${COOKIE_DATABASE}=${dbName}; expires=${date.toUTCString()}; path=/`;
-
+  if (!DATABASES.includes(dbName)) {
+    throw new Error("Unbekannte Plan-Datenquelle.");
+  }
+  setPreferenceCookie(COOKIE_DATABASE, dbName, COOKIE_PREFERENCE_MAX_AGE);
   updateCurrentDatabaseDisplay();
+  return true;
 }
 
-// Cookie auslesen
 function getDatabase() {
-  const cookies = document.cookie.split(";").map(c => c.trim());
-  const match = cookies.find(c => c.startsWith(COOKIE_DATABASE + "="));
-  return match ? match.split("=")[1] : "dsb-database"; // Default DB
+  const saved = getCookie(COOKIE_DATABASE);
+  if (!saved) return "cloudflare";
+  if (DATABASES.includes(saved)) {
+    setPreferenceCookie(COOKIE_DATABASE, saved, COOKIE_PREFERENCE_MAX_AGE);
+    return saved;
+  }
+
+  // Legacy database names cannot be mapped safely; Cloudflare is the new default.
+  setPreferenceCookie(COOKIE_DATABASE, "cloudflare", COOKIE_PREFERENCE_MAX_AGE);
+  return "cloudflare";
 }
 
-// UI aktualisieren
 function updateCurrentDatabaseDisplay() {
   const db = getDatabase();
   const element = document.getElementById("current-db");
-  if (!element) return;
-
-  // Default anzeigen mit Zusatz
-  const displayName = db === "dsb-database" ? `${db} (Default)` : db;
-
-  element.textContent = displayName;
+  if (element) {
+    element.textContent = DATABASE_LABELS[db];
+  }
+  const selector = document.getElementById("database-choice");
+  if (selector) selector.value = db;
 }
 
-const COOKIE_FUTURE_PLANS = "futurePlans";
-
 function toggleFuturePlans(value) {
-  const date = new Date();
-  date.setTime(date.getTime() + 365 * 24 * 60 * 60 * 1000);
-  document.cookie = `${COOKIE_FUTURE_PLANS}=${value}; expires=${date.toUTCString()}; path=/`;
+  if (value !== "true" && value !== "false") {
+    throw new Error("Ungültige Einstellung für zukünftige Pläne.");
+  }
+  setPreferenceCookie(COOKIE_FUTURE_PLANS, value, COOKIE_PREFERENCE_MAX_AGE);
   updateFuturePlansDisplay();
 }
 
 function getFuturePlans() {
-  const cookies = document.cookie.split(";").map(c => c.trim());
-  const match = cookies.find(c => c.startsWith(COOKIE_FUTURE_PLANS + "="));
-  return match ? match.split("=")[1] : "true"; // Standard: Ein
+  const saved = getCookie(COOKIE_FUTURE_PLANS);
+  if (saved === "true" || saved === "false") {
+    setPreferenceCookie(COOKIE_FUTURE_PLANS, saved, COOKIE_PREFERENCE_MAX_AGE);
+    return saved;
+  }
+  if (saved !== null) expireCookie(COOKIE_FUTURE_PLANS);
+  return "true";
 }
 
 function updateFuturePlansDisplay() {
@@ -61,9 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Setzt alle Einstellungen auf die Standardwerte zurück
 function resetPreferences() {
-  // Standarddatenbank
-  setDatabase("dsb-database");
-  // Standard: Keine zukünftigen Pläne anzeigen
+  setDatabase("cloudflare");
   toggleFuturePlans("true");
 }
 
@@ -74,11 +109,20 @@ function resetTheme() {
 }
 
 function deleteCookies() {
-  const cookies = document.cookie.split(";").map(c => c.trim());
-  for (const cookie of cookies) {
-    const name = cookie.split("=")[0];
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  const names = document.cookie.split(";").map(cookie => cookie.trim().split("=")[0]);
+  for (const name of names) {
+    if (name === COOKIE_DATABASE || name === COOKIE_FUTURE_PLANS || name.startsWith("popupSeen_")) {
+      expireCookie(name);
+    }
   }
   updateCurrentDatabaseDisplay();
   updateFuturePlansDisplay();
+}
+
+function handleDatabaseSourceChange() {
+  const selector = document.getElementById("database-choice");
+  if (!selector) return;
+  const status = document.getElementById("database-source-status");
+  setDatabase(selector.value);
+  if (status) status.textContent = `${DATABASE_LABELS[selector.value]} ist gespeichert.`;
 }

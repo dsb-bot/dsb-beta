@@ -86,6 +86,10 @@ Hast du Vorschläge oder Feedback? Kontaktiere mich gerne:
 Viel Spaß mit DSB-Bot! 😊
 # Frontend API setup
 
-The frontend and API are served from one OCI host. Caddy serves these static files at the site root and proxies `/api/*` to FastAPI. `assets/js/apiConfig.js` uses `window.location.origin`, so no per-host API edit is needed. Configure the public domain in the backend `.env` as `API_DOMAIN`.
+The GitHub Pages frontend uses the Cloudflare read API by default. In Einstellungen, users can switch to either of
+the public GitHub plan repositories, `dsb-database` or `dsb-beta-database`. The selected source is stored in a
+one-year preference cookie. Existing recognized `dsb_database` values are preserved; unknown legacy values fall back
+to Cloudflare. Users do not need to clear their cookies manually.
 
-Current plans and history are loaded from that API. Historical HTML is opened directly in a sandboxed iframe, so relative assets resolve against the site origin and plan scripts cannot run. The existing pages, themes, reload control, and future-plan preference remain in place.
+The source selection does not grant write access. Never put API credentials in the frontend. Current and historical
+plans continue to use the same read-only API contract, and plan HTML remains sandboxed in the viewer.

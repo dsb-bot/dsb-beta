@@ -38,11 +38,14 @@
       card.style.cursor = "pointer";
       const heading = document.createElement("h2");
       heading.textContent = formattedDate;
-      const updated = document.createElement("p");
-      updated.textContent = `Zuletzt aktualisiert: ${new Intl.DateTimeFormat("de-DE", {
-        dateStyle: "short", timeStyle: "short", timeZone: "Europe/Berlin"
-      }).format(new Date(plan.updated_at))}`;
-      card.append(heading, updated);
+      card.appendChild(heading);
+      if (plan.updated_at) {
+        const updated = document.createElement("p");
+        updated.textContent = `Zuletzt aktualisiert: ${new Intl.DateTimeFormat("de-DE", {
+          dateStyle: "short", timeStyle: "short", timeZone: "Europe/Berlin"
+        }).format(new Date(plan.updated_at))}`;
+        card.appendChild(updated);
+      }
       card.addEventListener("click", () => loadPlan(card));
       list.appendChild(card);
     }

@@ -1,9 +1,15 @@
 ﻿function getApiBaseUrl() {
   const configured = window.DSB_API_BASE_URL;
   if (!configured || configured.includes("example.invalid")) {
-    throw new Error("Die Plan-API ist noch nicht konfiguriert. Bitte DSB_API_BASE_URL in assets/js/apiConfig.js setzen.");
+    throw new Error("Die Cloudflare-Plan-API ist nicht konfiguriert.");
   }
   return configured.replace(/\/$/, "");
+}
+
+function isCalendarDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 function getBerlinDate(offsetDays = 0) {
@@ -19,6 +25,29 @@ function getBerlinDate(offsetDays = 0) {
 }
 
 async function fetchPlans(from, to) {
+  if (getDatabase() !== "cloudflare") {
+    const database = getDatabase();
+    const response = await fetch(
+      `https://api.github.com/repos/dsb-bot/${database}/contents/plans${from ? `?timestamp=${Date.now()}` : ""}`,
+      { headers: { Accept: "application/vnd.github+json" } }
+    );
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    const files = await response.json();
+    if (!Array.isArray(files)) throw new Error("Unerwartete Antwort der GitHub-Datenbank.");
+
+    return files.flatMap(file => {
+      const match = /^(\d{4}-\d{2}-\d{2})\.html$/.exec(file.name || "");
+      if (file.type !== "file" || !match || !isCalendarDate(match[1])
+          || file.size === 0 || typeof file.download_url !== "string") return [];
+      if ((from && match[1] < from) || (to && match[1] > to)) return [];
+      return [{
+        date: match[1],
+        title: `Plan vom ${match[1]}`,
+        html_url: file.download_url,
+      }];
+    }).sort((left, right) => left.date.localeCompare(right.date));
+  }
+
   const url = new URL(`${getApiBaseUrl()}/api/v1/plans`);
   if (from) url.searchParams.set("from", from);
   if (to) url.searchParams.set("to", to);
@@ -30,6 +59,13 @@ async function fetchPlans(from, to) {
 }
 
 function getPlanHtmlUrl(plan) {
+  if (getDatabase() !== "cloudflare") {
+    const url = new URL(plan.html_url);
+    if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com") {
+      throw new Error("Ungültige Plan-URL aus der GitHub-Datenbank.");
+    }
+    return url.toString();
+  }
   return new URL(plan.html_url, `${getApiBaseUrl()}/`).toString();
 }
 
