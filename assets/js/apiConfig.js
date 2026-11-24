@@ -1,2 +1,2 @@
-// The site and API are served from one OCI host through Caddy.
-window.DSB_API_BASE_URL = window.location.origin;
+// Public schedule API on Cloudflare Workers.
+window.DSB_API_BASE_URL = "https://dsb-bot-api.dsb-bot.workers.dev";
